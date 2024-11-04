@@ -82,19 +82,41 @@ Modify QAOA or ADMM settings in the config.yaml file.
 python plot_results.py
 
 
+Project Structure
+UC
 
-📂 Project Structure
+	├── figures				 # various figures of results
+	│
+	├── logs
+	│   └── admm_optimizer.log               # logs file of the ADMM optimizer
+	│
+	├── results
+	│   └── admm_results.pkl                 # ADMM result files
+	│
+	├── scripts
+	│   ├── experiments                      # Main directory for experiment scripts
+	│   │   ├── admm_tutorial.py             # Tutorial script for ADMM
+	│   │   ├── fake_hardware_exemple.py     # Simulation on fake quantum hardware
+	│   │   ├── post_process_simu.py         # Post-processing simulation results
+	│   │   ├── run_admm_cross-terms.py      # ADMM with cross-term constraints
+	│   │   ├── run_admm_hardware.py         # ADMM on real quantum hardware
+	│   │   ├── run_admm_simulation.py       # ADMM simulation script
+	│   │   ├── run_qaoa_multi-vars.py       # Multi-variable QAOA experiment
+	│   │   ├── run_rho_convergence.py       # Analyze rho convergence behavior
+	│   │   └── run_transpiler_settings.py   # Evaluate various transpiler settings
+	│   │
+	│   ├── solvers                          # Directory for UC solver implementations
+	│   │   ├── admm_optimizer.py            # ADMM optimizer implementation
+	│   │   ├── classical_solver_UC.py       # Classical UC solver for benchmarking
+	│   │   ├── temp.py                      # Temp script for prototyping
+	│   │    temp2.py                        # Another temp script for development
+	│   │
+	│   └── utils                            # Utilities and supporting functions
+	│       ├── models.py                    # Model definitions for UC
+	│       └── utils.py                     # Helper functions for data handling, logging
+	│
+	└── requirements.txt                     # Python dependencies for project setup
 
-variational_quantum_solver_UC/  
-│
-├── main.py                 # Main script to run the algorithm  
-├── admm_solver.py          # ADMM implementation  
-├── qaoa_circuit.py         # QAOA circuit definition  
-├── utils.py                # Helper functions  
-├── plot_results.py         # Plotting optimization results  
-├── config.yaml             # Configuration file for parameters  
-├── requirements.txt        # Dependencies list  
-└── README.md               # Project documentation  
 
 📊 Results
 
