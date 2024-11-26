@@ -1,5 +1,5 @@
 # Variational-Quantum-Solver-Unit-Commitment
-Variational Quantum ADMM Solver for Unit Commitment
+Variational Quantum Solver for Unit Commitment
 
 This repository contains a hybrid quantum-classical implementation of the Alternating Direction Method of Multipliers (ADMM) algorithm using Variational Quantum Algorithms (VQA) to solve the Unit Commitment (UC) problem. The UC problem focuses on selecting the optimal subset of power units to meet demand while minimizing operational costs.
 
@@ -38,7 +38,6 @@ This hybrid quantum-classical approach leverages:
 	3.	Hybrid Workflow: A classical optimizer tunes the QAOA parameters (γ, β), and the quantum circuit generates feasible binary solutions.
 
 ⚙️ Installation
-
 To run the code locally, follow these steps:
 
 	1.	Clone the Repository
