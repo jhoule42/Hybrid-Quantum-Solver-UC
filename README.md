@@ -1,7 +1,7 @@
 # Variational-Quantum-Solver-Unit-Commitment
 Variational Quantum Solver for Unit Commitment
 
-This repository contains a hybrid quantum-classical implementation of the Alternating Direction Method of Multipliers (ADMM) algorithm using Variational Quantum Algorithms (VQA) to solve the Unit Commitment (UC) problem. The UC problem focuses on selecting the optimal subset of power units to meet demand while minimizing operational costs.
+This repository contains the implementation of a Variational Quantum Algorithms (VQA) to solve the Unit Commitment (UC) problem. The UC problem focuses on selecting the optimal subset of power units to meet demand while minimizing operational costs.
 
 📋 Table of Contents
 
@@ -17,7 +17,7 @@ This repository contains a hybrid quantum-classical implementation of the Altern
 
 🚀 Project Overview
 
-This project explores the use of the Quantum Approximate Optimization Algorithm (QAOA) within the ADMM framework to solve the Unit Commitment problem. By leveraging quantum computing (via IBM’s Qiskit platform) and classical optimization, we aim to address the complexity of this mixed-integer optimization problem.
+This project explores the use of the Quantum Approximate Optimization Algorithm (QAOA) to solve the Unit Commitment problem. By leveraging quantum computing (via IBM’s Qiskit platform) and classical optimization, we aim to address the complexity of this mixed-integer optimization problem.
 
 🔍 Problem Description
 
@@ -28,14 +28,6 @@ The Unit Commitment (UC) problem involves:
 	•	Minimizing the total operational costs across a given time horizon.
 
 Since UC is NP-hard, it becomes computationally intensive for large instances, making it a compelling use case for quantum-inspired algorithms.
-
-🧑‍💻 Algorithm Overview
-
-This hybrid quantum-classical approach leverages:
-
-	1.	QAOA: Provides binary solutions for selecting which units are active.
-	2.	ADMM Framework: Ensures that constraints are satisfied while optimizing continuous variables.
-	3.	Hybrid Workflow: A classical optimizer tunes the QAOA parameters (γ, β), and the quantum circuit generates feasible binary solutions.
 
 ⚙️ Installation
 To run the code locally, follow these steps:
@@ -55,30 +47,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 	3.	Install Dependencies
 
 pip install -r requirements.txt
-
-
-	4.	Set up Qiskit Account (Optional for IBM Quantum)
-If using IBM Quantum resources, create an account here and save your API token:
-
-from qiskit import IBMQ  
-IBMQ.save_account('your_token_here')  
-
-
-
-▶️ Usage
-
-	1.	Prepare the Input Data:
-Define your input matrix with power units and demand requirements.
-	2.	Run the Algorithm:
-
-python main.py
-
-
-	3.	Adjust Parameters:
-Modify QAOA or ADMM settings in the config.yaml file.
-	4.	Visualize Results:
-
-python plot_results.py
 
 
 Project Structure
@@ -117,14 +85,6 @@ UC
 	└── requirements.txt                     # Python dependencies for project setup
 
 
-📊 Results
-
-The project produces:
-
-	•	Binary Solutions: Indicating which units are active.
-	•	Optimized Power Outputs: Continuous values for active units.
-	•	Plots: Visualizing the evolution of QAOA parameters (γ, β) over iterations.
-
 🤝 Contributing
 
 We welcome contributions!
@@ -134,11 +94,9 @@ We welcome contributions!
 
 git checkout -b feature-branch  
 
-
 	3.	Commit your changes:
 
 git commit -m "Describe your changes"  
-
 
 	4.	Push to your fork and submit a pull request.
 
