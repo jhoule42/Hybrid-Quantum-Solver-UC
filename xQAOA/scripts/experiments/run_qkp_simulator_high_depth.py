@@ -15,11 +15,11 @@ from qiskit_ibm_runtime import SamplerV2
 
 
 #%% ==================== PARAMETERS ====================
-n = 8
+n = 12
 k_range = [15]  # Simplified from np.arange(10, 24, 1)
 theta_range = [-1]  # Simplified from [0, -0.5, -1]
-N_beta, N_gamma = 30, 30  # Number of grid points for beta and gamma
-shots = 3000
+N_beta, N_gamma = 5, 5  # Number of grid points for beta and gamma
+shots = 8000
 bit_mapping = 'regular'
 PATH_RUNS = "/Users/julien-pierrehoule/Documents/Stage/T3/Code/xQAOA/runs/simulation"
 
@@ -55,6 +55,8 @@ dict_params['bit_mapping'] = bit_mapping
 # List of distribution functions
 list_distributions = [generate_profit_spanner]
 
+v, w = generate_profit_spanner(n)
+
 # Save parameter to file
 with open(f'{PATH_RUNS}/{folder_name}/parameters.json', 'w') as file:
     json.dump(dict_params, file, indent=4)
@@ -65,6 +67,7 @@ print('Run parameters saved to file.')
 
 list_opt_parameters = []
 range_capacity_ratio = np.linspace(0.2, 0.8, 20)
+range_capacity_ratio = [0.7]
 
 # Create a list to store results for each capacity ratio
 all_results = []
@@ -84,14 +87,14 @@ for c_ratio in range_capacity_ratio:
         # print(f"\nUsing distribution: {dist_func.__name__}")
 
         # Generate values and weights for the current distribution
-        v, w = dist_func(n)
+        # v, w = dist_func(n)
         c = np.ceil(c_ratio * sum(w)).astype(int)
 
         # Solve with Brute Force for optimal solution
         solutions = bruteforce_knapsack(v, w, c)
         bitstrings_ranked = [i[2] for i in solutions]
         optimal_value = solutions[0][0]
-        # print(f"\nOptimal Solution (BruteForce): {optimal_value}")
+        print(f"\nOptimal Solution (BruteForce): {optimal_value}")
 
 
         # Run Lazy Greedy Knapsack
@@ -126,20 +129,22 @@ for c_ratio in range_capacity_ratio:
 
         # COPULA MIXER
         print("\nCOPULA MIXER")
-        optimizer_C = QKPOptimizer(v, w, c, mixer='copula', optimal_solution=optimal_value,
+        optimizer_C = QKPOptimizer(v, w, c, mixer='copula',
+                                   p = 2,
+                                   optimal_solution=optimal_value,
                                    speedup_computation=False)
         optimizer_C.parameter_optimization(k_range, theta_range, N_beta, N_gamma,
                                            bit_mapping='regular', shots=shots)
 
 
-        # # Store results in dict
-        # results['copula'][dist_func.__name__] = {}
-        # results['copula'][dist_func.__name__] = {
-        #         'ratio_optim': optimizer_C.best_value / optimal_value,
-        #         'rank_solution': bitstrings_ranked.index(optimizer_C.best_bitstring) + 1,
-        #         'beta_opt': optimizer_C.best_params[0],
-        #         'gamma_opt': optimizer_C.best_params[1],
-        #         'best_value': optimizer_C.best_value}
+        # Store results in dict
+        results['copula'][dist_func.__name__] = {}
+        results['copula'][dist_func.__name__] = {
+                'ratio_optim': optimizer_C.best_value / optimal_value,
+                'rank_solution': bitstrings_ranked.index(optimizer_C.best_bitstring) + 1,
+                'beta_opt': optimizer_C.best_params[0],
+                'gamma_opt': optimizer_C.best_params[1],
+                'best_value': optimizer_C.best_value}
         
         # if (optimizer_C.best_value / optimal_value) > 0.95:
         #     list_opt_parameters.append(optimizer_C.best_params)
@@ -173,24 +178,27 @@ def plot_optimal_parameters(parameters):
     # Separate the beta and gamma values for plotting
     beta_values = [beta for beta, gamma in parameters]
     gamma_values = [gamma for beta, gamma in parameters]
+    range_idx = np.arange(len(parameters))+1
 
     # Create the plot
     plt.figure(figsize=(10, 6))
-    plt.scatter(beta_values, gamma_values, color="blue", alpha=0.7, edgecolor="black")
+    plt.plot(range_idx, beta_values, color="blue", alpha=0.9, label=r'$\beta$ values')
+    plt.plot(range_idx, gamma_values, color="k", alpha=0.9, label=r'$\gamma$ values')
     
     # Add labels and a grid
     plt.title("Optimal Parameters (β, γ)", fontsize=14)
-    plt.xlabel("Beta (β)", fontsize=12)
-    plt.ylabel("Gamma (γ)", fontsize=12)
+    plt.xlabel("Layer (p)", fontsize=12)
+    plt.ylabel("Values", fontsize=12)
     plt.grid(alpha=0.5)
     plt.xlim(0, np.pi)
     plt.ylim(0, 2*np.pi)
+    plt.legend()
     
     # Show the plot
     plt.tight_layout()
     plt.show()
 
-plot_optimal_parameters(list_opt_parameters)
+plot_optimal_parameters(optimizer_C.best_params)
 
 
 
@@ -203,10 +211,10 @@ plot_rank_and_ratio(results, methods=['lazy_greedy', 'very_greedy', 'copula'],
 #%%
 # Example of running a single instance with specific parameters
 bitstring, value, weights, counts, success = optimizer_C.QKP(
-    gamma=results['copula']['generate_profit_spanner']['gamma_opt'], 
-    beta=results['copula']['generate_profit_spanner']['beta_opt'],
+    gammas=results['copula']['generate_profit_spanner']['gamma_opt'], 
+    betas=results['copula']['generate_profit_spanner']['beta_opt'],
     k=15,
-    theta=0)
+    theta=0,)
 
 # Prepare the combined data
 combined_data = []

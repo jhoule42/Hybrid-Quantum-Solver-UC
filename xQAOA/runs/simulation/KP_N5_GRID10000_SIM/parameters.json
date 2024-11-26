@@ -1,0 +1,14 @@
+{
+    "execution_type": "simulator",
+    "exec_time": "2024-11-25_15-06-22",
+    "n_units": 5,
+    "k_range": [
+        18
+    ],
+    "theta_range": [
+        -1
+    ],
+    "N_beta": 100,
+    "N_gamma": 100,
+    "bit_mapping": "regular"
+}

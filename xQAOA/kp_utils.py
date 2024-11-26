@@ -148,14 +148,15 @@ def very_greedy_knapsack(v, w, c):
     return value, weight, ''.join(map(str, x))
 
 
-def plot_rank_and_ratio(results):
+def plot_rank_and_ratio(results, methods=None, labels=None):
     # Extract distributions
     distributions = list(results['very_greedy'].keys())
     distributions_cleaned = [d.replace('generate_', '') for d in distributions]
 
     # Initialize data for plotting
-    methods = ['lazy_greedy', 'very_greedy', 'hourglass', 'copula', 'X']
-    labels = ['LG', 'VG', r'$QKP_{H}$', r'$QKP_{COP}$', r'$QKP_{X}$']
+    if methods == None:
+        methods = ['lazy_greedy', 'very_greedy', 'hourglass', 'copula', 'X']
+        labels = ['LG', 'VG', r'$QKP_{H}$', r'$QKP_{COP}$', r'$QKP_{X}$']
     num_methods = len(methods)
     bar_width = 0.15  # Adjusted width for better spacing
 
@@ -245,31 +246,75 @@ def plot_rank_and_ratio(results):
     plt.show()
 
 
-def bruteforce_knapsack(values, weights, capacity, bit_mapping="regular"):
-    """Brute-force solver for the knapsack problem."""
+def bruteforce_knapsack(values, weights, capacity, bit_mapping="regular", show_progress=True):
+    """
+    Brute-force solver for the knapsack problem.
+
+    Parameters:
+    values (list): List of item values.
+    weights (list): List of item weights.
+    capacity (int): Maximum weight capacity of the knapsack.
+    bit_mapping (str): Either "regular" or "inverse" for bit interpretation.
+    show_progress (bool): Whether to show the progress bar.
+
+    Returns:
+    list: Ranked solutions as a list of tuples (value, weight, bitstring).
+    """
+    import itertools
+    from tqdm import tqdm
+
     n = len(values)
     ranked_solutions = []
     total_combinations = 2 ** n
-    
-    for subset in tqdm(itertools.product([0, 1], repeat=n), 
-                        total=total_combinations, 
-                        desc="Evaluating knapsack combinations"):
-        
+
+    # Select iteration tool based on progress bar option
+    iterator = (
+        tqdm(itertools.product([0, 1], repeat=n), 
+             total=total_combinations, 
+             desc="Evaluating knapsack combinations")
+        if show_progress else itertools.product([0, 1], repeat=n)
+    )
+
+    for subset in iterator:
         if bit_mapping == "regular":
             total_weight = sum(weights[i] * subset[i] for i in range(n))
             total_value = sum(values[i] * subset[i] for i in range(n))
-            
-        elif bit_mapping == "inverse":  
-            total_weight = sum(weights[i] * (1-subset[i]) for i in range(n))
-            total_value = sum(values[i] * (1-subset[i]) for i in range(n))
+        elif bit_mapping == "inverse":
+            total_weight = sum(weights[i] * (1 - subset[i]) for i in range(n))
+            total_value = sum(values[i] * (1 - subset[i]) for i in range(n))
 
         if total_weight <= capacity:
             ranked_solutions.append((total_value, total_weight, subset))
         else:
             ranked_solutions.append((0, 0, subset))
-    
+
     ranked_solutions.sort(key=lambda x: x[0], reverse=True)
-    ranked_solutions = [(int(value), int(weight), ''.join(map(str, bitstring))) 
-                        for value, weight, bitstring in ranked_solutions]
-    
+    ranked_solutions = [
+        (int(value), int(weight), ''.join(map(str, bitstring))) 
+        for value, weight, bitstring in ranked_solutions
+    ]
+
     return ranked_solutions
+
+def compute_min_D(B, C, L):
+    """
+    Compute the smallest D such that the capacity is non-negative.
+    
+    Parameters:
+    B: list or np.array of B coefficients
+    C: list or np.array of C coefficients
+    L: threshold value for capacity
+    
+    Returns:
+    optimal_D: The minimum D that satisfies the condition
+    """
+    B = np.array(B)
+    C = np.array(C)
+    
+    # Compute the numerator and denominator
+    numerator = 2 * L + np.sum(B / C)
+    denominator = np.sum(1 / C)
+    
+    # Calculate D
+    optimal_D = numerator / denominator
+    return optimal_D

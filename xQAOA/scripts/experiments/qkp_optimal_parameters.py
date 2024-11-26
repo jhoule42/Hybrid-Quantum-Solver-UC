@@ -15,11 +15,11 @@ from qiskit_ibm_runtime import SamplerV2
 
 
 #%% ==================== PARAMETERS ====================
-n = 8
+n = 18
 k_range = [15]  # Simplified from np.arange(10, 24, 1)
 theta_range = [-1]  # Simplified from [0, -0.5, -1]
 N_beta, N_gamma = 30, 30  # Number of grid points for beta and gamma
-shots = 3000
+shots = 10000
 bit_mapping = 'regular'
 PATH_RUNS = "/Users/julien-pierrehoule/Documents/Stage/T3/Code/xQAOA/runs/simulation"
 
@@ -69,7 +69,7 @@ range_capacity_ratio = np.linspace(0.2, 0.8, 20)
 # Create a list to store results for each capacity ratio
 all_results = []
 
-for c_ratio in range_capacity_ratio:
+for c_ratio in [0.3]:
     print(f"Capacity Ratio: {c_ratio}")
 
     # Dictionary to store results for this specific c_ratio
@@ -160,39 +160,120 @@ print('Done.')
 
 #%% ==================== VISUALIZE RESULTS ====================
 
+nb_optimal = 0
+dict_params = optimizer_C.dict_all_parameters
+for params in dict_params:
+    ratio = dict_params[params]/optimal_value
+
+    if ratio >= 0.98 and ratio <= 1.0:
+        nb_optimal += 1
+print("Nb optimal parameters", nb_optimal)
+
+#%%
+
+
 # Show optimal parameters distribution
 import matplotlib.pyplot as plt
+import seaborn as sns
 
-def plot_optimal_parameters(parameters):
-    """
-    Plot the optimal parameters (beta, gamma) as a scatter plot.
+from scipy.ndimage import gaussian_filter
+
+def create_2d_knapsack_heatmap(results_dict, optimal_value, sigma=1):
+    # Extract unique beta and gamma values
+    beta_values = sorted(set(float(key.split(',')[0]) for key in results_dict.keys()))
+    gamma_values = sorted(set(float(key.split(',')[1]) for key in results_dict.keys()))
     
-    Args:
-        parameters (list of tuple): A list of (beta, gamma) pairs.
-    """
-    # Separate the beta and gamma values for plotting
-    beta_values = [beta for beta, gamma in parameters]
-    gamma_values = [gamma for beta, gamma in parameters]
-
+    # Create a 2D grid to store values
+    value_grid = np.zeros((len(gamma_values), len(beta_values)))
+    
+    # Fill the grid with Knapsack values
+    for key, value in results_dict.items():
+        beta, gamma = map(float, key.split(','))
+        beta_index = beta_values.index(beta)
+        gamma_index = gamma_values.index(gamma)
+        
+        # Modify value based on ratio condition
+        ratio = value / optimal_value
+        value_grid[gamma_index, beta_index] = 0 if ratio > 1.0 or ratio < 0. else ratio
+    
+    # Apply Gaussian smoothing
+    smoothed_grid = gaussian_filter(value_grid, sigma=sigma)
+    
     # Create the plot
-    plt.figure(figsize=(10, 6))
-    plt.scatter(beta_values, gamma_values, color="blue", alpha=0.7, edgecolor="black")
+    plt.figure(figsize=(18, 6))
     
-    # Add labels and a grid
-    plt.title("Optimal Parameters (β, γ)", fontsize=14)
-    plt.xlabel("Beta (β)", fontsize=12)
-    plt.ylabel("Gamma (γ)", fontsize=12)
-    plt.grid(alpha=0.5)
-    plt.xlim(0, np.pi)
-    plt.ylim(0, 2*np.pi)
+    # Use seaborn heatmap for better visualization
+    ax = sns.heatmap(smoothed_grid,
+        cmap='plasma',
+        cbar_kws={'label': 'Smoothed Performance Ratio'},
+        # Select a subset of ticks for better readability
+        xticklabels=[f'{b:.2f}' for i, b in enumerate(beta_values) if i % 3 == 0],
+        yticklabels=[f'{g:.2f}' for i, g in enumerate(gamma_values) if i % 3 == 0]
+    )
     
-    # Show the plot
+    # Adjust tick positions to match selected labels
+    x_tick_positions = [i for i, b in enumerate(beta_values) if i % 3 == 0]
+    y_tick_positions = [i for i, g in enumerate(gamma_values) if i % 3 == 0]
+    
+    ax.set_xticks(x_tick_positions)
+    ax.set_yticks(y_tick_positions)
+    
+    plt.title('Smoothed Performance Ratio for Beta and Gamma Combinations')
+    plt.xlabel('Beta')
+    plt.ylabel('Gamma')
+    
+    # Rotate x-axis labels for better readability
+    plt.xticks(rotation=45, ha='right')
+    plt.yticks(rotation=0)
+    
     plt.tight_layout()
     plt.show()
 
-plot_optimal_parameters(list_opt_parameters)
+# Usage with optional sigma parameter
+# sigma controls the amount of smoothing
+# Higher sigma = more smoothing
+create_2d_knapsack_heatmap(optimizer_C.dict_all_parameters, optimal_value, sigma=0)
+
+# Usage
+# create_2d_knapsack_heatmap(optimizer_C.dict_all_parameters, optimal_value)
 
 
+#%%
+# Alternative plot using matplotlib for more customization
+def create_2d_knapsack_scatter(results_dict, optimal_value):
+    # Extract beta, gamma, and values
+    betas = []
+    gammas = []
+    values = []
+    
+    for key, value in results_dict.items():
+        beta, gamma = map(float, key.split(','))
+        betas.append(beta)
+        gammas.append(gamma)
+        ratio = value / optimal_value
+        if ratio > 1.0 or ratio < 0.0:
+            values.append(0)
+        else:
+            values.append(ratio)
+        
+    
+    plt.figure(figsize=(14, 6))
+    
+    # Create scatter plot
+    scatter = plt.scatter(betas, gammas, c=values, cmap='inferno', 
+                          s=100,  # Size of points
+                          alpha=0.99)
+    
+    plt.colorbar(scatter, label='Knapsack Value')
+    
+    plt.title('Knapsack Values for Different Beta and Gamma Combinations')
+    plt.ylabel('Gamma')
+    plt.xlabel('Beta')
+    
+    plt.tight_layout()
+    plt.show()
+
+create_2d_knapsack_scatter(optimizer_C.dict_all_parameters, optimal_value)
 
 
 #%%

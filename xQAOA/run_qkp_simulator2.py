@@ -12,12 +12,9 @@ from xQAOA.scripts.solvers.qkp_solver import *
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
 from qiskit_ibm_runtime.fake_provider import FakeAuckland
 from qiskit_ibm_runtime import SamplerV2 as Sampler, Batch
-from qiskit_ibm_runtime import QiskitRuntimeService
 
 #%%
-service = QiskitRuntimeService(channel="ibm_quantum", instance='pinq-quebec-hub/universit-de-cal/main')
-backend = service.backend('ibm_quebec')
-# backend = FakeAuckland()
+backend = FakeAuckland()
 
 if 'fake' in backend.name:
     fake_hardware = True
@@ -31,21 +28,23 @@ n = 15
 k_range = [15]  # Simplified from np.arange(10, 24, 1)
 theta_range = [0]  # Simplified from [0, -0.5, -1]
 N_beta, N_gamma = 20, 20  # Number of grid points for beta and gamma
+shots = 5000
 bit_mapping = 'regular'
-PATH_RUNS = "/Users/julien-pierrehoule/Documents/Stage/T3/Code/xQAOA/runs"
+PATH_RUNS = "/Users/julien-pierrehoule/Documents/Stage/T3/Code/xQAOA/runs/simulation"
 
-# Format time for folder name
-current_time = datetime.now()
-timestamp = current_time.strftime("%Y-%m-%d_%H-%M-%S")
+# Format time for file parameters
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 # Create folder with the timestamp
-folder_name = f"{timestamp}"
+folder_name = f"KP_N{n}_GRID{N_beta*N_gamma}_FAKE_SIM"
+
 os.makedirs(f"{PATH_RUNS}/{folder_name}", exist_ok=True)
 print(f"Folder created: {folder_name}")
 
 # Save parameters to dict
 dict_params = {}
-dict_params['fake_hardware'] = fake_hardware
+dict_params['timestamp'] = timestamp
+dict_params['backend'] = backend.name
 dict_params['exec_time'] = timestamp
 dict_params['n_units'] = n
 dict_params['k_range'] = k_range
@@ -53,6 +52,7 @@ dict_params['theta_range'] = theta_range
 dict_params['N_beta'] = N_beta
 dict_params['N_gamma'] = N_gamma
 dict_params['bit_mapping'] = bit_mapping
+dict_params['shots'] = shots
 
 # List of distribution functions
 list_distributions = [generate_profit_spanner]
@@ -84,8 +84,7 @@ for dist_func in list_distributions:
                                run_hardware=True, backend=backend,
                                pass_manager=pm)
     
-    # optimizer_C.parameter_optimization(k_range, [0], N_beta, N_gamma, bit_mapping='regular')
-    list_qc = optimizer_C.generate_circuits(k_range, [0], N_beta, N_gamma)
+    list_qc = optimizer_C.generate_circuits(k_range, theta_range, N_beta, N_gamma)
 
 # Save parameter to file
 with open(f'{PATH_RUNS}/{folder_name}/parameters.json', 'w') as file:
@@ -93,7 +92,7 @@ with open(f'{PATH_RUNS}/{folder_name}/parameters.json', 'w') as file:
 print('Run parameters saved to file.')
 
 
-#%%
+#%%  ===================== Transpilating JOBS =====================
 print("Transpiling Quantum Circuits.")
 list_isa_qc = optimizer_C.transpile_circuits(list_qc, pass_manager=pm)
 
@@ -112,7 +111,7 @@ with Batch(backend=backend, max_time='2h') as batch:
     for idx, isa_qc in enumerate(list_isa_qc):
         print(idx+1)
 
-        job = sampler.run([isa_qc], shots=10000)
+        job = sampler.run([isa_qc], shots=shots)
         job_id = job.job_id()
         dict_jobs_id[job_id] = {}
 
